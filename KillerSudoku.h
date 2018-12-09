@@ -80,28 +80,29 @@ public:
       cout << ' ' << *it;
     cout << '\n';
   }
+  /*
   void FiltroDominicial(KS& sudoku){
-    for (row = sudoku.matrix.begin(); row != sudoku.matrix.end(); ++row) {
-      for (col = row->begin(); col != row->end(); ++col) {
-        if(col->valor_inicial != 0){
+    for (int i = 0; i<tamano; i++) {
+      for (int j= 0; j<tamano; j++ ) {
+        if(sudoku.matrix[i][j].valor_inicial != 0){
           //cout << "Valor inicial: " << col->valor_inicial << '\n';
-          col->dominio.resize(1);
-          col->dominio[0] = col->valor_inicial;
+          sudoku.matrix[i][j].dominio.resize(1);
+          sudoku.matrix[i][j].dominio[0] = sudoku.matrix[i][j].valor_inicial;
+          //std::cout << "Valor incial: "<< sudoku.matrix[i][j].valor_inicial << '\n';
+          //filtro_rows(sudoku, i, sudoku.matrix[i][j].valor_inicial);
         }
       }
     }
   }
-  void filtro_rows(KS& sudoku, int n){
-    for(auto i : sudoku.matrix[1]){
-      if(i.dominio.size()>1){
-
-        for(auto j : i.dominio){
-            i.dominio.erase(i.dominio.begin() + j);
-
-        }
+  void filtro_rows(KS& sudoku, int n, int pos){
+    for (int i = 0; i < tamano; i++) {
+      if(sudoku.matrix[n][i].dominio.size() > 1){
+        cout << sudoku.matrix[n][i].dominio[pos-1] << "Para el i" << i << '\n';
+        sudoku.matrix[n][i].dominio.erase(sudoku.matrix[n][i].dominio.begin()+(pos-1));
+        return;
       }
-
     }
-  }
+    return;
+  }*/
 
 };
