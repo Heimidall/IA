@@ -7,6 +7,7 @@
 using namespace std;
 class Celda{
   public:
+    vector<int>::iterator it;
     size_t size = 9;
     int valor_inicial;
     int sector;
@@ -18,14 +19,16 @@ class Celda{
       }
     }
     void printdom(){
-      for(int i = 0; i < 9; i++) {
-        cout << dominio[i] << '\n';
+      for (auto i : dominio)
+        cout << ' ' << i;
+      cout << '\n';
       }
-    }
 };
 
 class KS{
 public:
+  vector< vector<Celda> >::iterator row;
+  vector<Celda>::iterator col;
   vector<vector<Celda>> matrix{9, vector<Celda>(9)};
   vector<int> valor_sectores;
   vector<int>::iterator it;
@@ -76,6 +79,17 @@ public:
     for ( it = valor_sectores.begin() ; it != valor_sectores.end(); ++it)
       cout << ' ' << *it;
     cout << '\n';
+  }
+  void FiltroDominicial(KS& sudoku){
+    for (row = sudoku.matrix.begin(); row != sudoku.matrix.end(); ++row) {
+      for (col = row->begin(); col != row->end(); ++col) {
+        if(col->valor_inicial != 0){
+          cout << "Valor inicial: " << col->valor_inicial << '\n';
+          col->dominio.resize(1);
+          col->dominio[0] = col->valor_inicial;
+        }
+      }
+    }
   }
 
 };
