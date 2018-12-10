@@ -4,10 +4,12 @@
 #include <cstdlib>
 #include <vector>
 #include <sstream>
+#include <algorithm>
 using namespace std;
 const int tamano = 9;
 class Celda{
   public:
+    void printdom(Celda& celda);
     vector<int>::iterator it;
     int valor_inicial;
     int sector;
@@ -18,15 +20,27 @@ class Celda{
         dominio.push_back(i+1);
       }
     }
-    void printdom(){
-      for (auto i : dominio)
-        cout << ' ' << i;
-      cout << '\n';
-      }
 };
+void Celda:: printdom(Celda& celda){
+  for (auto i : celda.dominio)
+  cout << ' ' << i;
+  cout << '\n';
+}
 
 class KS{
+private:
+
+
 public:
+  void printGrilla(KS& sudoku);
+  void printSectores(KS& sudoku);
+  bool lleno(KS& sudoku);
+  void FiltroDominicial(KS& sudoku);
+  void filtro_rows(KS& sudoku, int n, int& pos);
+  void filtro_cols(KS& sudoku, int n, int& pos);
+  void iterador_cols(KS& sudoku);
+  void iterador_rows(KS& sudoku);
+  void filtrador(KS& sudoku, int col,int row);
   vector< vector<Celda> >::iterator row;
   vector<Celda>::iterator col;
   vector<vector<Celda>> matrix{9, vector<Celda>(9)};
@@ -37,7 +51,7 @@ public:
     string value;
     int pos,x;
     string c;
-    ifstream file("easier_filled.txt");
+    ifstream file("80blank.txt");
     for (size_t i = 0; i < tamano; i++) {
       if(!file.good()) return;
       for (size_t j = 0; j < tamano; j++) {
@@ -67,21 +81,32 @@ public:
     file.close();
   }
 
-  void printGrilla(){
+};
+  void KS:: printGrilla(KS& sudoku){
     for (size_t i = 0; i < tamano; i++) {
       for (size_t j = 0; j < tamano; j++) {
-        cout << matrix[i][j].valor_inicial << " ";
+        cout << sudoku.matrix[i][j].valor_inicial << " ";
       }
       cout << '\n';
     }
   }
-  void printSectores(){
-    for ( it = valor_sectores.begin() ; it != valor_sectores.end(); ++it)
+  void KS:: printSectores(KS& sudoku){
+    for ( it = sudoku.valor_sectores.begin() ; it != sudoku.valor_sectores.end(); ++it)
       cout << ' ' << *it;
     cout << '\n';
   }
-  /*
-  void FiltroDominicial(KS& sudoku){
+  bool KS:: lleno(KS& sudoku){
+    for (int i = 0; i < tamano; i++) {
+      for (int j = 0; j < tamano; j++) {
+        if(sudoku.matrix[i][j].valor_inicial == 0){
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  void KS::FiltroDominicial(KS& sudoku){
     for (int i = 0; i<tamano; i++) {
       for (int j= 0; j<tamano; j++ ) {
         if(sudoku.matrix[i][j].valor_inicial != 0){
@@ -89,20 +114,47 @@ public:
           sudoku.matrix[i][j].dominio.resize(1);
           sudoku.matrix[i][j].dominio[0] = sudoku.matrix[i][j].valor_inicial;
           //std::cout << "Valor incial: "<< sudoku.matrix[i][j].valor_inicial << '\n';
-          //filtro_rows(sudoku, i, sudoku.matrix[i][j].valor_inicial);
+        }
+        //else para los valores igaules a cero
+        else{
+          filtrador(sudoku, i,j);
         }
       }
     }
+    return;
   }
-  void filtro_rows(KS& sudoku, int n, int pos){
+  void KS::filtrador(KS& sudoku, int col, int row){
+    vector<int>::iterator x;
+    //para columnas
     for (int i = 0; i < tamano; i++) {
-      if(sudoku.matrix[n][i].dominio.size() > 1){
-        cout << sudoku.matrix[n][i].dominio[pos-1] << "Para el i" << i << '\n';
-        sudoku.matrix[n][i].dominio.erase(sudoku.matrix[n][i].dominio.begin()+(pos-1));
-        return;
+      if(sudoku.matrix[i][row].valor_inicial != 0){
+        if(find(sudoku.matrix[col][row].dominio.begin(),sudoku.matrix[col][row].dominio.end(),sudoku.matrix[i][row].valor_inicial) != sudoku.matrix[col][row].dominio.end()){
+          x = find(sudoku.matrix[col][row].dominio.begin(),sudoku.matrix[col][row].dominio.end(),sudoku.matrix[i][row].valor_inicial);
+          sudoku.matrix[col][row].dominio.erase(x);
+
+        }
+      }
+    }
+    //para las filas
+    for (int i = 0; i < tamano; i++) {
+      if(sudoku.matrix[col][i].valor_inicial != 0){
+        if(find(sudoku.matrix[col][row].dominio.begin(),sudoku.matrix[col][row].dominio.end(),sudoku.matrix[col][i].valor_inicial) !=sudoku.matrix[col][row].dominio.end()){
+          x = find(sudoku.matrix[col][row].dominio.begin(),sudoku.matrix[col][row].dominio.end(),sudoku.matrix[col][i].valor_inicial);
+          sudoku.matrix[col][row].dominio.erase(x);
+
+        }
+      }
+    }
+    for (int i = (col - (col%3)); i < (col - (col%3))+sqrt(tamano); i++) {
+      for (int j = (row - (col%3)); j < (row - (row%3))+sqrt(tamano); j++) {
+        if(sudoku.matrix[i][j].valor_inicial != 0){
+          if(find(sudoku.matrix[col][row].dominio.begin(),sudoku.matrix[col][row].dominio.end(),sudoku.matrix[i][j].valor_inicial) !=sudoku.matrix[col][row].dominio.end()){
+            x = find(sudoku.matrix[col][row].dominio.begin(),sudoku.matrix[col][row].dominio.end(),sudoku.matrix[i][j].valor_inicial);
+            sudoku.matrix[col][row].dominio.erase(x);
+
+          }
+        }
       }
     }
     return;
-  }*/
-
-};
+  }
