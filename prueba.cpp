@@ -9,8 +9,8 @@ using namespace std;
 
 int main(void) {
   KS sudoku;
-  sudoku.printSectores(sudoku);
   sudoku.FiltroDominicial(sudoku);
+  //sudoku.printSectores(sudoku);
   std::cout << '\n';
 /*
   for (size_t i = 0; i < tamano; i++) {

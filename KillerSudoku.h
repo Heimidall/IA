@@ -7,6 +7,15 @@
 #include <algorithm>
 using namespace std;
 const int tamano = 9;
+class Sector{
+public:
+  int valor_sector;
+  int miembros;
+  Sector(int x){
+    valor_sector = x;
+    miembros = 0;
+  }
+};
 class Celda{
   public:
     void printdom(Celda& celda);
@@ -45,14 +54,14 @@ public:
   vector< vector<Celda> >::iterator row;
   vector<Celda>::iterator col;
   vector<vector<Celda>> matrix{9, vector<Celda>(9)};
-  vector<int> valor_sectores;
+  vector<Sector> valor_sectores;
   vector<int>::iterator it;
   KS(){
     char ptos;
     string value;
     int pos,x;
     string c;
-    ifstream file("80blank.txt");
+    ifstream file("60blank.txt");
     for (size_t i = 0; i < tamano; i++) {
       if(!file.good()) return;
       for (size_t j = 0; j < tamano; j++) {
@@ -77,7 +86,8 @@ public:
       c = value.substr(pos+1);
       stringstream ent(c);
       ent >> x;
-      valor_sectores.push_back(x);
+      Sector sec(x);
+      valor_sectores.push_back(sec);
     }
     file.close();
   }
@@ -103,14 +113,14 @@ public:
   }
 
   void KS:: printSectores(KS& sudoku){
-    for ( it = sudoku.valor_sectores.begin() ; it != sudoku.valor_sectores.end(); ++it)
-      cout << ' ' << *it;
+    for ( auto it = sudoku.valor_sectores.begin() ; it != sudoku.valor_sectores.end(); ++it)
+      cout << ' ' << it->valor_sector << "con:" << it->miembros << "miembros |";
     cout << '\n';
   }
   bool KS:: lleno(KS& sudoku){
     for (int i = 0; i < tamano; i++) {
       for (int j = 0; j < tamano; j++) {
-        if(sudoku.matrix[i][j].valor_inicial == 0 ){ //|| (sudoku.matrix[i][j].dominio.size() >1
+        if(sudoku.matrix[i][j].valor_inicial == 0 ){// || sudoku.valor_sectores[j].valor_sector != 0
           return false;
         }
       }
@@ -121,9 +131,11 @@ public:
   void KS::FiltroDominicial(KS& sudoku){
     for (int i = 0; i<tamano; i++) {
       for (int j= 0; j<tamano; j++ ) {
+        sudoku.valor_sectores[sudoku.matrix[i][j].sector-1].miembros +=1;
         if(sudoku.matrix[i][j].valor_inicial != 0){
           sudoku.matrix[i][j].dominio.resize(1);
           sudoku.matrix[i][j].dominio[0] = sudoku.matrix[i][j].valor_inicial;
+          sudoku.valor_sectores[sudoku.matrix[i][j].sector-1].valor_sector -= sudoku.matrix[i][j].valor_inicial;
         }
         //else para los valores igaules a cero
         else{
@@ -193,28 +205,28 @@ public:
           return false;
         }
       }
-      /*
+
       //killer sudoku
-      std::cout << "antes de entrar al if: " << sudoku.valor_sectores[sudoku.matrix[col][row].sector_value] - valor << '\n';
-      if((sudoku.valor_sectores[sudoku.matrix[col][row].sector_value] - valor)<0){
+      std::cout << "antes de entrar al if: (" << col << " , " << row << ") : " << sudoku.valor_sectores[sudoku.matrix[col][row].sector -1].valor_sector<< " - " << valor  << " = " <<sudoku.valor_sectores[sudoku.matrix[col][row].sector-1].valor_sector - valor << "Miembros: " <<sudoku.valor_sectores[sudoku.matrix[col][row].sector-1].miembros << '\n';
+      if((sudoku.valor_sectores[sudoku.matrix[col][row].sector-1].valor_sector - valor)<0){
+        //sudoku.valor_sectores[sudoku.matrix[col][row].sector-1] += valor;
         std::cout << "entre al if" << '\n';
         return false;
       }
-      else if((sudoku.valor_sectores[sudoku.matrix[col][row].sector_value] - valor)==0){ //aqui solo entraría el ultimo numero
 
-        for (int i = 0; i < tamano; i++) {
-          if(sudoku.valor_sectores[i] != 0){
-            sudoku.valor_sectores[sudoku.matrix[col][row].sector_value] += valor;
-            std::cout << "Valor sectores en, es valido: "<< sudoku.valor_sectores[sudoku.matrix[col][row].sector_value] << '\n';
+      if((sudoku.valor_sectores[sudoku.matrix[col][row].sector-1].valor_sector - valor) > 0 && sudoku.valor_sectores[sudoku.matrix[col][row].sector-1].miembros == 0){ //aqui solo entraría el ultimo numero
+        std::cout << "Entre al if de miembros, porque  (" <<col<<" , " << row<<") tiene 0 miembros" << '\n';
+            //sudoku.valor_sectores[sudoku.matrix[col][row].sector_value] += valor;
+            //std::cout << "Valor sectores en, es valido: "<< sudoku.valor_sectores[sudoku.matrix[col][row].sector_value] << '\n';
             return false;
-          }
-        }
+
+
       }
-      */
+
     return true;
     }
   void KS::solver(KS& sudoku){
-    //vector<int>::iterator x;
+    vector<int> respaldo;
     int x =0;
     int y=0;
     int temp = 0;
@@ -241,13 +253,17 @@ public:
       }
       if(!flag){
         for (int i = sudoku.matrix[x][y].dominio.size(); i-- !=0;) {
+          respaldo = sudoku.matrix[x][y].dominio;
           temp = sudoku.matrix[x][y].dominio[i];
-          //std::cout << "(" << x << ',' <<y << ")" << " temp:"<<temp <<" :"<<" size:" << sudoku.matrix[x][y].dominio.size()<<'\n';
-          if(sudoku.es_valido(sudoku,x,y, temp)){
+          std::cout << "(" << x << ',' <<y << ")" << " temp:"<<temp <<" :"<<" size:" << sudoku.matrix[x][y].dominio.size()<<'\n';
+          //std::cout<< "Sector: " <<sudoku.valor_sectores[(sudoku.matrix[x][y].sector)-1]<< " " <<sudoku.valor_sectores[sudoku.matrix[x][y].sector_value]<< '-'<< sudoku.matrix[x][y].dominio[i]<< ' ' << sudoku.valor_sectores[sudoku.matrix[x][y].sector_value] - sudoku.matrix[x][y].dominio[i] << '\n';
+          sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].miembros -=1;
+          if(sudoku.es_valido(sudoku,x,y, sudoku.matrix[x][y].dominio[i])){
             //std::cout << "moviemiento valido: " << temp << '\n';
-            //std::cout <<sudoku.valor_sectores[sudoku.matrix[x][y].sector_value]<< '-'<< temp<< ' ' << sudoku.valor_sectores[sudoku.matrix[x][y].sector_value] - temp << '\n';
-            //sudoku.valor_sectores[sudoku.matrix[x][y].sector_value] -= temp;
+            sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].valor_sector -= temp;
             sudoku.matrix[x][y].valor_inicial = sudoku.matrix[x][y].dominio[i];
+            std::cout << "avanzo en la recursion con este valor del sector: " << sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].valor_sector << '\n';
+            std::cout << "Miembros:" << sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].miembros <<'\n';
             //sudoku.matrix[x][y].dominio.erase(sudoku.matrix[x][y].dominio.begin()+i);
             sudoku.solver(sudoku);
           }
@@ -255,9 +271,13 @@ public:
         //sudoku.matrix[x][y].dominio.push_back(temp);
         //std::cout << "ME DEEEEVOOOOOOOLLLLLLL VIIIIIIIIIIIIIIII " << " TEMP: " <<temp << '\n';
         if(!sudoku.lleno(sudoku)){
+          std::cout << "me devuelvo en la recursion con este valor del sector: " << sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].valor_sector <<'\n';
+
           //std::cout << "Return: " << x <<" , " << y<< '|' << temp <<'\n';
-          //sudoku.valor_sectores[sudoku.matrix[x][y].sector_value] += temp;
+          sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].miembros +=1;
+          sudoku.valor_sectores[sudoku.matrix[x][y].sector-1].valor_sector += sudoku.matrix[x][y].valor_inicial;
           //std::cout << "Valor sector: "<<sudoku.valor_sectores[sudoku.matrix[x][y].sector_value] <<'\n';
+          //sudoku.matrix[x][y].dominio = respaldo;
           sudoku.matrix[x][y].valor_inicial = 0;
 
         }
