@@ -240,7 +240,7 @@ public:
         }
       }
       if(!flag){
-        for (int i = 0; i <sudoku.matrix[x][y].dominio.size(); i++) {
+        for (int i = sudoku.matrix[x][y].dominio.size(); i-- !=0;) {
           temp = sudoku.matrix[x][y].dominio[i];
           //std::cout << "(" << x << ',' <<y << ")" << " temp:"<<temp <<" :"<<" size:" << sudoku.matrix[x][y].dominio.size()<<'\n';
           if(sudoku.es_valido(sudoku,x,y, temp)){
