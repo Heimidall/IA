@@ -9,11 +9,13 @@ using namespace std;
 const int tamano = 9;
 class Sector{
 public:
+  int valor_sectormax;
   int valor_sector;
   int miembros;
   Sector(int x){
     valor_sector = x;
     miembros = 0;
+    valor_sectormax=x;
   }
 };
 class Celda{
@@ -51,6 +53,8 @@ public:
   void printSol(KS& sudoku);
   void filtrador(KS& sudoku, int col,int row);
   void solver(KS& sudoku);
+  void FC(KS sudoku, int col, int row, int valor);
+  void RestoreFC(KS sudoku, int col, int row, int valor);
   vector< vector<Celda> >::iterator row;
   vector<Celda>::iterator col;
   vector<vector<Celda>> matrix{9, vector<Celda>(9)};
@@ -61,7 +65,7 @@ public:
     string value;
     int pos,x;
     string c;
-    ifstream file("80blank.txt");
+    ifstream file("hard.txt");
     for (size_t i = 0; i < tamano; i++) {
       if(!file.good()) return;
       for (size_t j = 0; j < tamano; j++) {
@@ -136,6 +140,7 @@ public:
           sudoku.matrix[i][j].dominio.resize(1);
           sudoku.matrix[i][j].dominio[0] = sudoku.matrix[i][j].valor_inicial;
           sudoku.valor_sectores[sudoku.matrix[i][j].sector-1].valor_sector -= sudoku.matrix[i][j].valor_inicial;
+          sudoku.valor_sectores[sudoku.matrix[i][j].sector-1].miembros -=1;
         }
         //else para los valores igaules a cero
         else{
@@ -183,6 +188,8 @@ public:
     }
     if(sudoku.matrix[col][row].dominio.size()==1){
       sudoku.matrix[col][row].valor_inicial = sudoku.matrix[col][row].dominio[0];
+      sudoku.valor_sectores[sudoku.matrix[col][row].sector-1].valor_sector -= sudoku.matrix[col][row].valor_inicial;
+      sudoku.valor_sectores[sudoku.matrix[col][row].sector-1].miembros -=1;
     }
     return;
   }
@@ -258,10 +265,15 @@ public:
           //std::cout << "(" << x << ',' <<y << ")" << " temp:"<<temp <<" :"<<" size:" << sudoku.matrix[x][y].dominio.size()<<'\n';
           //std::cout<< "Sector: " <<sudoku.valor_sectores[(sudoku.matrix[x][y].sector)-1]<< " " <<sudoku.valor_sectores[sudoku.matrix[x][y].sector_value]<< '-'<< sudoku.matrix[x][y].dominio[i]<< ' ' << sudoku.valor_sectores[sudoku.matrix[x][y].sector_value] - sudoku.matrix[x][y].dominio[i] << '\n';
           sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].miembros -=1;
+          sudoku.matrix[x][y].valor_inicial = sudoku.matrix[x][y].dominio[i];
           if(sudoku.es_valido(sudoku,x,y, sudoku.matrix[x][y].dominio[i])){
+            if((x==0 && y ==0)|| (x==1 && y ==1) || (x==2 && y ==2)|| (x==3 && y ==3)|| (x==4 && y ==4)|| (x==5 && y ==5) || (x==6 && y ==6) || (x==7 && y ==7) || (x==8 && y ==8)){
+              std::cout << "( " << x<<" , " << y <<") =" << temp <<'\n';
+            }
             //std::cout << "moviemiento valido: " << temp << '\n';
+
             sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].valor_sector -= temp;
-            sudoku.matrix[x][y].valor_inicial = sudoku.matrix[x][y].dominio[i];
+            sudoku.FC(sudoku, x,y,sudoku.matrix[x][y].dominio[i]);
             //std::cout << "avanzo en la recursion con este valor del sector: " << sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].valor_sector << '\n';
             //std::cout << "Miembros:" << sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].miembros <<'\n';
             //sudoku.matrix[x][y].dominio.erase(sudoku.matrix[x][y].dominio.begin()+i);
@@ -276,6 +288,7 @@ public:
           //std::cout << "Return: " << x <<" , " << y<< '|' << temp <<'\n';
           sudoku.valor_sectores[sudoku.matrix[x][y].sector -1].miembros +=1;
           sudoku.valor_sectores[sudoku.matrix[x][y].sector-1].valor_sector += sudoku.matrix[x][y].valor_inicial;
+          sudoku.RestoreFC(sudoku, x,y,sudoku.matrix[x][y].dominio[i]);
           //std::cout << "Valor sector: "<<sudoku.valor_sectores[sudoku.matrix[x][y].sector_value] <<'\n';
           //sudoku.matrix[x][y].dominio = respaldo;
           sudoku.matrix[x][y].valor_inicial = 0;
@@ -288,3 +301,61 @@ public:
     }
   }
 }
+void KS::RestoreFC(KS sudoku, int col, int row, int valor){
+  for (int i = 0; i < tamano; i++) {
+    if(find(sudoku.matrix[i][row].dominio.begin(),sudoku.matrix[i][row].dominio.end(),valor) == sudoku.matrix[i][row].dominio.end()){
+      sudoku.matrix[i][row].dominio.push_back(valor);
+      sort(sudoku.matrix[i][row].dominio.begin(),sudoku.matrix[i][row].dominio.end());
+    }
+  }
+  for (int i = 0; i < tamano; i++) {
+    if(find(sudoku.matrix[col][i].dominio.begin(),sudoku.matrix[col][i].dominio.end(),valor) == sudoku.matrix[col][i].dominio.end()){
+      sudoku.matrix[col][i].dominio.push_back(valor);
+      sort(sudoku.matrix[col][i].dominio.begin(),sudoku.matrix[col][i].dominio.end());
+    }
+  }
+  for (int i = (col - (col%3)); i < (col - (col%3))+sqrt(tamano); i++) {
+    for (int j = (row - (row%3)); j < (row - (row%3))+sqrt(tamano); j++) {
+      if(find(sudoku.matrix[i][j].dominio.begin(),sudoku.matrix[i][j].dominio.end(),valor) == sudoku.matrix[i][j].dominio.end()){
+        sudoku.matrix[i][j].dominio.push_back(valor);
+        sort(sudoku.matrix[i][j].dominio.begin(),sudoku.matrix[i][j].dominio.end());
+      }
+    }
+  }
+}
+void KS::FC(KS sudoku, int col, int row, int valor){
+  vector<int>::iterator x;
+    //para columnas
+    for (int i = 0; i < tamano; i++) {
+        if(find(sudoku.matrix[i][row].dominio.begin(),sudoku.matrix[i][row].dominio.end(),valor) != sudoku.matrix[i][row].dominio.end()){
+          x = find(sudoku.matrix[i][row].dominio.begin(),sudoku.matrix[i][row].dominio.end(),valor);
+          sudoku.matrix[i][row].dominio.erase(x);
+        }
+        if(sudoku.matrix[i][row].dominio.size()==0){
+          return;
+        }
+      }
+    //para las filas
+    for (int i = 0; i < tamano; i++) {
+      if(find(sudoku.matrix[col][i].dominio.begin(),sudoku.matrix[col][i].dominio.end(),valor) != sudoku.matrix[col][i].dominio.end()){
+        x = find(sudoku.matrix[col][i].dominio.begin(),sudoku.matrix[col][i].dominio.end(),valor);
+        sudoku.matrix[col][i].dominio.erase(x);
+        }
+        if(sudoku.matrix[col][i].dominio.size()==0){
+          return;
+        }
+      }
+
+    //cajas
+    for (int i = (col - (col%3)); i < (col - (col%3))+sqrt(tamano); i++) {
+      for (int j = (row - (row%3)); j < (row - (row%3))+sqrt(tamano); j++) {
+        if(find(sudoku.matrix[i][j].dominio.begin(),sudoku.matrix[i][j].dominio.end(),valor) != sudoku.matrix[i][j].dominio.end()){
+          x = find(sudoku.matrix[i][j].dominio.begin(),sudoku.matrix[i][j].dominio.end(),valor);
+          sudoku.matrix[i][j].dominio.erase(x);
+          }
+          if(sudoku.matrix[i][j].dominio.size()==0){
+            return;
+          }
+      }
+    }
+  }
